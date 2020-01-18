@@ -1,7 +1,7 @@
 # Личный проект «Кексобукинг» [![Build status][travis-image]][travis-url]
 
 * Студент: [Marat Khaybullin](https://up.htmlacademy.ru/javascript/19/user/682929).
-* Наставник: `Неизвестно`.
+* Наставник: `Али Гасымов`.
 
 ---
 
