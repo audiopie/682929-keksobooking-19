@@ -2,7 +2,7 @@
 
 // этот класс переключает карту из неактивного состояния в активное
 var map = document.querySelector('.map');
-map.classList.remove('map--faded');
+// map.classList.remove('map--faded');
 
 var mapPins = document.querySelector('.map__pins');
 var pinTemplate = document.querySelector('#pin').content.querySelector('.map__pin');
@@ -102,3 +102,82 @@ function renderPosts() {
 }
 
 renderPosts();
+
+
+var notice = document.querySelector('.notice');
+var selectFieldsets = notice.querySelectorAll('fieldset');
+var mapFilters = document.querySelector('.map__filters-container');
+var mapFilterSelects = mapFilters.querySelectorAll('select');
+var mapPinMain = map.querySelector('.map__pin--main');
+
+var roomNumberValidity = notice.querySelector('#room_number');
+var capacityCountValidity = notice.querySelector('#capacity');
+
+function inputAddress() {
+  var addressInput = notice.querySelector('#address');
+  addressInput.value = '570x 375y';
+}
+
+function activateForm() {
+  for (var i = 0; i < selectFieldsets.length; i++) {
+    selectFieldsets[i].removeAttribute('disabled', 'disabled');
+  }
+  for (var j = 0; j < mapFilterSelects.length; j++) {
+    mapFilterSelects[j].removeAttribute('disabled', 'disabled');
+  }
+  var disabledAdForm = notice.querySelector('form');
+  disabledAdForm.classList.remove('ad-form--disabled');
+  map.classList.remove('map--faded');
+  inputAddress();
+}
+
+function inactiveForm() {
+  for (var i = 0; i < selectFieldsets.length; i++) {
+    selectFieldsets[i].setAttribute('disabled', 'disabled');
+  }
+  for (var j = 0; j < mapFilterSelects.length; j++) {
+    mapFilterSelects[j].setAttribute('disabled', 'disabled');
+  }
+}
+
+inactiveForm();
+
+mapPinMain.addEventListener('mousedown', function (evt) {
+  if (evt.button === 0) {
+    activateForm();
+  }
+});
+
+mapPinMain.addEventListener('keydown', function (evt) {
+  if (evt.key === 'Enter') {
+    activateForm();
+  }
+});
+
+roomNumberValidity.addEventListener('click', function () {
+  checkValidity();
+});
+
+capacityCountValidity.addEventListener('click', function () {
+  checkValidity();
+});
+
+
+function checkValidity() {
+  if (checkValue()) {
+    capacityCountValidity.setCustomValidity('');
+  } else {
+    capacityCountValidity.setCustomValidity('Кол-во комнат должно соответствовать кол-во комнат');
+  }
+}
+
+function checkValue() {
+  if (roomNumberValidity.value === capacityCountValidity.value) {
+    return true;
+  } else if (roomNumberValidity.value === '100' && capacityCountValidity.value === '0') {
+    return true;
+  }
+  return false;
+}
+
+
