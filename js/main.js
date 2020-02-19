@@ -2,7 +2,7 @@
 
 // этот класс переключает карту из неактивного состояния в активное
 var map = document.querySelector('.map');
-// map.classList.remove('map--faded');
+
 
 var mapPins = document.querySelector('.map__pins');
 var pinTemplate = document.querySelector('#pin').content.querySelector('.map__pin');
@@ -89,7 +89,7 @@ function renderPost(postElement, template) {
   return template;
 }
 
-function renderPosts() {
+function createPins() {
   var posts = getPosts();
 
   var fragment = document.createDocumentFragment();
@@ -101,7 +101,7 @@ function renderPosts() {
   mapPins.appendChild(fragment);
 }
 
-renderPosts();
+createPins();
 
 
 var notice = document.querySelector('.notice');
@@ -109,14 +109,24 @@ var selectFieldsets = notice.querySelectorAll('fieldset');
 var mapFilters = document.querySelector('.map__filters-container');
 var mapFilterSelects = mapFilters.querySelectorAll('select');
 var mapPinMain = map.querySelector('.map__pin--main');
+var addressInput = notice.querySelector('#address');
 
 var roomNumberValidity = notice.querySelector('#room_number');
 var capacityCountValidity = notice.querySelector('#capacity');
 
-function inputAddress() {
-  var addressInput = notice.querySelector('#address');
-  addressInput.value = '570x 375y';
+// в неактивном состоянии страницы метка круглая, поэтому в поле адреса подставляются координаты центра метки;
+function calculateInactivePinCoordinates() {
+  var x = parseInt(mapPinMain.style.left, 10) + Math.round(65 / 2);
+  var y = parseInt(mapPinMain.style.top, 10) + Math.round(65 / 2);
+  addressInput.value = [x, y];
 }
+// при переходе страницы в активное состояние в поле адреса подставляются координаты острого конца метки
+function calculateActivePinCoordinates() {
+  var x = parseInt(mapPinMain.style.left, 10) + Math.round(65 / 2);
+  var y = parseInt(mapPinMain.style.top, 10) + Math.round(65);
+  addressInput.value = [x, y];
+}
+
 
 function activateForm() {
   for (var i = 0; i < selectFieldsets.length; i++) {
@@ -125,22 +135,22 @@ function activateForm() {
   for (var j = 0; j < mapFilterSelects.length; j++) {
     mapFilterSelects[j].removeAttribute('disabled', 'disabled');
   }
-  var disabledAdForm = notice.querySelector('form');
-  disabledAdForm.classList.remove('ad-form--disabled');
+  var noticeForm = notice.querySelector('form');
+  noticeForm.classList.remove('ad-form--disabled');
   map.classList.remove('map--faded');
-  inputAddress();
+  calculateActivePinCoordinates();
 }
 
-function inactiveForm() {
+(function inactiveForm() {
   for (var i = 0; i < selectFieldsets.length; i++) {
     selectFieldsets[i].setAttribute('disabled', 'disabled');
   }
   for (var j = 0; j < mapFilterSelects.length; j++) {
     mapFilterSelects[j].setAttribute('disabled', 'disabled');
   }
-}
+  calculateInactivePinCoordinates();
+})();
 
-inactiveForm();
 
 mapPinMain.addEventListener('mousedown', function (evt) {
   if (evt.button === 0) {
@@ -154,14 +164,14 @@ mapPinMain.addEventListener('keydown', function (evt) {
   }
 });
 
-roomNumberValidity.addEventListener('click', function () {
-  checkValidity();
-});
-
-capacityCountValidity.addEventListener('click', function () {
-  checkValidity();
-});
-
+function checkValue() {
+  if (roomNumberValidity.value >= capacityCountValidity.value) {
+    return true;
+  } else if (roomNumberValidity.value === '100' && capacityCountValidity.value === '0') {
+    return true;
+  }
+  return false;
+}
 
 function checkValidity() {
   if (checkValue()) {
@@ -171,13 +181,11 @@ function checkValidity() {
   }
 }
 
-function checkValue() {
-  if (roomNumberValidity.value === capacityCountValidity.value) {
-    return true;
-  } else if (roomNumberValidity.value === '100' && capacityCountValidity.value === '0') {
-    return true;
-  }
-  return false;
-}
+roomNumberValidity.addEventListener('click', function () {
+  checkValidity();
+});
 
+capacityCountValidity.addEventListener('click', function () {
+  checkValidity();
+});
 
