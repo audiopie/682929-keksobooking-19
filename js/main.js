@@ -2,20 +2,13 @@
 
 (function () {
   var map = document.querySelector('.map');
-  var main = document.querySelector('main');
   var notice = document.querySelector('.notice');
   var mapPins = document.querySelector('.map__pins');
   var adForm = document.querySelector('.ad-form');
-  var submitFormButton = adForm.querySelector('.ad-form__submit');
-  var resetButton = adForm.querySelector('.ad-form__reset');
   var mapPinMain = map.querySelector('.map__pin--main');
   var mapFilters = document.querySelector('.map__filters-container');
-  var housingTypeFilter = mapFilters.querySelector('#housing-type');
-  var housingPriceFilter = mapFilters.querySelector('#housing-price');
   var pinTemplate = document.querySelector('#pin').content.querySelector('.map__pin');
   var card = document.querySelector('#card').content.querySelector('article');
-  var errorMessage = document.querySelector('#error').content.querySelector('.error');
-  var successMessage = document.querySelector('#success').content.querySelector('.success');
   var timeElementsForm = document.querySelector('.ad-form__element--time');
   var typeElement = adForm.elements.type;
   var priceElement = adForm.elements.price;
@@ -29,7 +22,6 @@
   var cardElement = null;
   var PIN_WIDTH = 50;
   var PIN_HEIGHT = 70;
-  var ACTIVATE = true;
 
   var minPriceByType = {
     bungalo: 0,
@@ -45,27 +37,11 @@
     0: ['100']
   };
 
-  var priceValueFilters = {
-    low: {
-      min: 0,
-      max: 10000,
-    },
-    middle: {
-      min: 10000,
-      max: 50000,
-    },
-    high: {
-      min: 50000,
-      max: 100000000,
-    }
-  };
-
   var typeOfHouse = {
     'flat': 'Квартира',
     'bungalo': 'Бунгало',
     'house': 'Дом',
-    'palace': 'Дворец',
-    'any': 'Любой тип жилья',
+    'palace': 'Дворец'
   };
 
   function getCardClickHandler(post) {
@@ -131,73 +107,36 @@
 
     xhr.open('GET', 'https://js.dump.academy/keksobooking/data');
 
-    xhr.onload = (function () {
+    xhr.onload = function () {
       callback(xhr.response);
-    });
+    };
 
     xhr.send();
   }
 
-  housingPriceFilter.addEventListener('change', function (event) {
+  function renderPins() {
+    getPosts(function (posts) {
+      var fragment = document.createDocumentFragment();
+      for (var i = 0; i < posts.length; i++) {
+        var post = posts[i];
+        if (!('offer' in post)) {
+          continue;
+        }
 
-    var result;
+        var pinElement = pinTemplate.cloneNode(true);
+        var left = (post.location.x - (PIN_WIDTH / 2)) + 'px';
+        var top = (post.location.y - PIN_HEIGHT) + 'px';
 
-    mapPins.querySelectorAll('button[type=button]').forEach(function (item) {
-      item.remove();
-    });
+        pinElement.style.left = left;
+        pinElement.style.top = top;
+        pinElement.querySelector('img').src = post.author.avatar;
+        pinElement.querySelector('img').alt = post.offer.title;
+        pinElement.addEventListener('click', getCardClickHandler(post));
 
-    getPosts(function (responseData) {
-      result = responseData.filter(function (type) {
-        return type.offer.price <= priceValueFilters[event.target.value]['max'] && type.offer.price > priceValueFilters[event.target.value]['min'];
+        fragment.appendChild(pinElement);
       }
-      );
-      renderPins(result);
+      mapPins.appendChild(fragment);
     });
-  });
-
-
-  housingTypeFilter.addEventListener('change', function (event) {
-    if (event.target.value === 'any') {
-      getPosts(function (items) {
-        renderPins(items);
-      });
-    }
-
-    var result;
-
-    mapPins.querySelectorAll('button[type=button]').forEach(function (item) {
-      item.remove();
-    });
-
-    getPosts(function (responseData) {
-      result = responseData.filter(function (type) {
-        return type.offer.type === event.target.value;
-      }
-      );
-      renderPins(result);
-    });
-  });
-
-  function renderPins(posts) {
-    var fragment = document.createDocumentFragment();
-    for (var i = 0; i < posts.length; i++) {
-      var post = posts[i];
-      if (!('offer' in post)) {
-        continue;
-      }
-      var pinElement = pinTemplate.cloneNode(true);
-      var left = (post.location.x - (PIN_WIDTH / 2)) + 'px';
-      var top = (post.location.y - PIN_HEIGHT) + 'px';
-
-      pinElement.style.left = left;
-      pinElement.style.top = top;
-      pinElement.querySelector('img').src = post.author.avatar;
-      pinElement.querySelector('img').alt = post.offer.title;
-      pinElement.addEventListener('click', getCardClickHandler(post));
-
-      fragment.appendChild(pinElement);
-    }
-    mapPins.appendChild(fragment);
   }
 
   function activatePage() {
@@ -212,13 +151,7 @@
       fieldset.disabled = false;
     });
 
-
-    if (ACTIVATE) {
-      ACTIVATE = false;
-      getPosts(function (data) {
-        return renderPins(data);
-      });
-    }
+    renderPins();
   }
 
   function validatePrice() {
@@ -276,8 +209,7 @@
       mapPinMain.style.top = top + 'px';
       mapPinMain.style.left = left + 'px';
 
-      addressElement.value = Math.round(left + mainPinWidth / 2) + ', ' + (top - 90);
-      addressElement.setAttribute('value', addressElement.value);
+      addressElement.value = (left + Math.round(mainPinWidth / 2)) + ', ' + (top - 90);
     }
 
     function handleMouseUp() {
@@ -319,91 +251,16 @@
     timeOutForm.value = event.target.value;
   });
 
-  addressElement.value = '600, 350';
-  addressElement.disabled = true;
-
   mapPinMain.addEventListener('mousedown', handleMouseDown);
 
-  resetForm();
-
-  function uploadForm(data, onSuccess) {
-    var URL = 'https://js.dump.academy/keksobooking';
-    var xhr = new XMLHttpRequest();
-    xhr.responseType = 'json';
-
-    xhr.addEventListener('load', function () {
-      onSuccess(xhr.response);
-    });
-
-    xhr.open('POST', URL);
-    xhr.send(data);
-    if (xhr.status >= 400 || xhr.status < 500) {
-      showErrorMessage();
-    } else if (xhr.status >= 200 || xhr.status < 300) {
-      showSuccessMessage();
-    }
-
-  }
-
-  function showErrorMessage() {
-    var errorElement = errorMessage.cloneNode(true);
-    main.appendChild(errorElement);
-    document.addEventListener('keydown', function (evt) {
-      if (evt.key === 'Escape') {
-        errorElement.classList.add('hidden');
-        main.querySelector('.error').remove();
-      }
-    });
-    errorElement.addEventListener('click', function () {
-      errorElement.classList.add('hidden');
-      main.querySelector('.error').remove();
-    });
-  }
-
-  function showSuccessMessage() {
-    var successElement = successMessage.cloneNode(true);
-    main.appendChild(successElement);
-    document.addEventListener('keydown', function (evt) {
-      if (evt.key === 'Escape') {
-        successElement.classList.add('hidden');
-        main.querySelector('.success').remove();
-      }
-    });
-    successElement.addEventListener('click', function () {
-      successElement.classList.add('hidden');
-      main.querySelector('.success').remove();
-    });
-  }
-
-  function resetForm() {
-    adForm.reset();
-    map.classList.add('map--faded');
-    adForm.classList.add('ad-form--disabled');
-
-    adFieldsetList.forEach(function (fieldset) {
-      fieldset.disabled = true;
-    });
-
-    filtersFieldsetList.forEach(function (fieldset) {
-      fieldset.disabled = true;
-    });
-
-    mapPins.querySelectorAll('button[type=button]').forEach(function (item) {
-      item.remove();
-
-      ACTIVATE = true;
-    });
-    addressElement.value = '600, 350';
-    addressElement.disabled = true;
-  }
-
-  submitFormButton.addEventListener('click', function (event) {
-    uploadForm(new FormData(adForm), function () {
-      resetForm();
-    });
-    event.preventDefault();
+  adFieldsetList.forEach(function (fieldset) {
+    fieldset.disabled = true;
   });
 
-  resetButton.addEventListener('click', resetForm);
+  filtersFieldsetList.forEach(function (fieldset) {
+    fieldset.disabled = true;
+  });
 
+  addressElement.value = '600, 350';
+  addressElement.disabled = true;
 }());
