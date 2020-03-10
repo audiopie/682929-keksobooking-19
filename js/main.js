@@ -2,6 +2,7 @@
 
 (function () {
   var map = document.querySelector('.map');
+  var main = document.querySelector('main');
   var notice = document.querySelector('.notice');
   var mapPins = document.querySelector('.map__pins');
   var adForm = document.querySelector('.ad-form');
@@ -22,6 +23,8 @@
   var filtersFieldsetList = mapFiltersContainer.querySelectorAll('select');
   var typeElementFilter = mapFilters.elements['housing-type'];
   var featuresElementsFilter = mapFilters.elements.features;
+  var errorMessage = document.querySelector('#error').content.querySelector('.error');
+  var successMessage = document.querySelector('#success').content.querySelector('.success');
 
   var PIN_WIDTH = 50;
   var PIN_HEIGHT = 70;
@@ -229,7 +232,6 @@
     }
 
     activatePage();
-
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
 
@@ -239,9 +241,9 @@
     var mainPinWidth = 65;
     var mainPinHeight = 80;
 
-    function handleMouseMove() {
-      var pageY = event.pageY;
-      var pageX = event.pageX;
+    function handleMouseMove(moveEvent) {
+      var pageY = moveEvent.pageY;
+      var pageX = moveEvent.pageX;
 
       var left = pageX < offsetLeft ? 0 : pageX - offsetLeft;
       var top = pageY < 130 ? 130 - (mainPinHeight / 2) : pageY - (mainPinHeight / 2);
@@ -257,13 +259,45 @@
       mapPinMain.style.top = top + 'px';
       mapPinMain.style.left = left + 'px';
 
-      addressElement.value = (left + Math.round(mainPinWidth / 2)) + ', ' + (top - 90);
+      addressElement.value = (left + Math.round(mainPinWidth / 2)) + ', ' + (top + (mainPinHeight / 2));
     }
 
     function handleMouseUp() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     }
+  }
+
+  function renderSuccess() {
+    var successElement = successMessage.cloneNode(true);
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        successElement.remove();
+      }
+    });
+
+    successElement.addEventListener('click', function () {
+      successElement.remove();
+    });
+
+    main.appendChild(successElement);
+  }
+
+  function renderError() {
+    var errorElement = errorMessage.cloneNode(true);
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        errorElement.remove();
+      }
+    });
+
+    errorElement.addEventListener('click', function () {
+      errorElement.remove();
+    });
+
+    main.appendChild(errorElement);
   }
 
   mapPinMain.addEventListener('keydown', function (event) {
@@ -296,6 +330,24 @@
   adForm.addEventListener('submit', function (event) {
     event.preventDefault();
     validateRoomNumber();
+
+    var formData = new FormData(adForm);
+    formData.append(addressElement.name, addressElement.value);
+
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = 'json';
+
+    xhr.open(adForm.method, adForm.action);
+
+    xhr.addEventListener('load', function () {
+      if (xhr.status >= 400 && xhr.status < 500) {
+        renderError();
+      } else {
+        renderSuccess();
+      }
+    });
+
+    xhr.send(formData);
   });
 
   timeElementsForm.addEventListener('change', function (event) {
