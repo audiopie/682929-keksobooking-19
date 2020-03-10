@@ -6,7 +6,8 @@
   var mapPins = document.querySelector('.map__pins');
   var adForm = document.querySelector('.ad-form');
   var mapPinMain = map.querySelector('.map__pin--main');
-  var mapFilters = document.querySelector('.map__filters-container');
+  var mapFiltersContainer = document.querySelector('.map__filters-container');
+  var mapFilters = mapFiltersContainer.querySelector('.map__filters');
   var pinTemplate = document.querySelector('#pin').content.querySelector('.map__pin');
   var card = document.querySelector('#card').content.querySelector('article');
   var timeElementsForm = document.querySelector('.ad-form__element--time');
@@ -18,10 +19,15 @@
   var roomNumber = adForm.elements.rooms;
   var capacityNumber = adForm.elements.capacity;
   var adFieldsetList = notice.querySelectorAll('fieldset');
-  var filtersFieldsetList = mapFilters.querySelectorAll('select');
-  var cardElement = null;
+  var filtersFieldsetList = mapFiltersContainer.querySelectorAll('select');
+  var typeElementFilter = mapFilters.elements['housing-type'];
+  var featuresElementsFilter = mapFilters.elements.features;
+
   var PIN_WIDTH = 50;
   var PIN_HEIGHT = 70;
+
+  var cardElement = null;
+  var posts = null;
 
   var minPriceByType = {
     bungalo: 0,
@@ -115,31 +121,69 @@
   }
 
   function renderPins() {
-    getPosts(function (posts) {
-      var fragment = document.createDocumentFragment();
-      for (var i = 0; i < posts.length; i++) {
-        var post = posts[i];
-        if (!('offer' in post)) {
-          continue;
+    if (!posts) {
+      return;
+    }
+
+    mapPins.querySelectorAll('.map__pin:not(.map__pin--main)')
+      .forEach(function (pin) {
+        pin.remove();
+      });
+
+    var fragment = document.createDocumentFragment();
+
+    var typeFilter = typeElementFilter.value;
+
+    posts.forEach(function (post) {
+      if (!('offer' in post)) {
+        return;
+      }
+
+      // 1. Filter by type
+      if (typeFilter !== 'any' && typeFilter !== post.offer.type) {
+        return;
+      }
+
+      // 5. Filter by features
+      var notFeatures = false;
+
+      featuresElementsFilter.forEach(function (feature) {
+        if (!feature.checked) {
+          return;
         }
 
-        var pinElement = pinTemplate.cloneNode(true);
-        var left = (post.location.x - (PIN_WIDTH / 2)) + 'px';
-        var top = (post.location.y - PIN_HEIGHT) + 'px';
+        if (post.offer.features.includes(feature.value)) {
+          return;
+        }
 
-        pinElement.style.left = left;
-        pinElement.style.top = top;
-        pinElement.querySelector('img').src = post.author.avatar;
-        pinElement.querySelector('img').alt = post.offer.title;
-        pinElement.addEventListener('click', getCardClickHandler(post));
+        notFeatures = true;
+      });
 
-        fragment.appendChild(pinElement);
+      if (notFeatures) {
+        return;
       }
-      mapPins.appendChild(fragment);
+
+      var pinElement = pinTemplate.cloneNode(true);
+      var left = (post.location.x - (PIN_WIDTH / 2)) + 'px';
+      var top = (post.location.y - PIN_HEIGHT) + 'px';
+
+      pinElement.style.left = left;
+      pinElement.style.top = top;
+      pinElement.querySelector('img').src = post.author.avatar;
+      pinElement.querySelector('img').alt = post.offer.title;
+      pinElement.addEventListener('click', getCardClickHandler(post));
+
+      fragment.appendChild(pinElement);
     });
+
+    mapPins.appendChild(fragment);
   }
 
   function activatePage() {
+    if (!map.classList.contains('map--faded')) {
+      return;
+    }
+
     map.classList.remove('map--faded');
     adForm.classList.remove('ad-form--disabled');
 
@@ -151,7 +195,11 @@
       fieldset.disabled = false;
     });
 
-    renderPins();
+    getPosts(function (result) {
+      posts = result;
+
+      renderPins();
+    });
   }
 
   function validatePrice() {
@@ -222,6 +270,10 @@
     if (event.key === 'Enter' || event.code === 'NumpadEnter') {
       activatePage();
     }
+  });
+
+  mapFilters.addEventListener('change', function () {
+    renderPins();
   });
 
   typeElement.addEventListener('change', function () {
