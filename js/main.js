@@ -22,6 +22,9 @@
   var adFieldsetList = notice.querySelectorAll('fieldset');
   var filtersFieldsetList = mapFiltersContainer.querySelectorAll('select');
   var typeElementFilter = mapFilters.elements['housing-type'];
+  var priceElementFilter = mapFilters.elements['housing-price'];
+  var roomCountFilter = mapFilters.elements['housing-rooms'];
+  var guestsCountFilter = mapFilters.elements['housing-guests'];
   var featuresElementsFilter = mapFilters.elements.features;
   var errorMessage = document.querySelector('#error').content.querySelector('.error');
   var successMessage = document.querySelector('#success').content.querySelector('.success');
@@ -31,6 +34,7 @@
 
   var cardElement = null;
   var posts = null;
+  var previousPin = null;
 
   var minPriceByType = {
     bungalo: 0,
@@ -51,6 +55,21 @@
     'bungalo': 'Бунгало',
     'house': 'Дом',
     'palace': 'Дворец'
+  };
+
+  var priceValueFilters = {
+    low: {
+      min: 0,
+      max: 10000,
+    },
+    middle: {
+      min: 10000,
+      max: 50000,
+    },
+    high: {
+      min: 50000,
+      max: 100000000,
+    }
   };
 
   function getCardClickHandler(post) {
@@ -135,7 +154,11 @@
 
     var fragment = document.createDocumentFragment();
 
+
     var typeFilter = typeElementFilter.value;
+    var priceFilter = priceElementFilter.value;
+    var roomFilter = roomCountFilter.value;
+    var guestsFilter = guestsCountFilter.value;
 
     posts.forEach(function (post) {
       if (!('offer' in post)) {
@@ -144,6 +167,21 @@
 
       // 1. Filter by type
       if (typeFilter !== 'any' && typeFilter !== post.offer.type) {
+        return;
+      }
+
+      // 2. Filter by price
+      if (priceFilter !== 'any' && (!(post.offer.price <= priceValueFilters[priceFilter]['max'] && post.offer.price > priceValueFilters[priceFilter]['min']))) {
+        return;
+      }
+
+      // 3. Filter by room number
+      if (roomFilter !== 'any' && +roomFilter !== post.offer.rooms) {
+        return;
+      }
+
+      // 4. Filter by guests count
+      if (guestsFilter !== 'any' && +guestsFilter !== post.offer.guests) {
         return;
       }
 
@@ -176,11 +214,26 @@
       pinElement.querySelector('img').alt = post.offer.title;
       pinElement.addEventListener('click', getCardClickHandler(post));
 
+      pinElement.addEventListener('click', function (event) {
+        pinElement.classList.add('map__pin--active');
+        var currentPin = event.currentTarget;
+        if (previousPin !== null && previousPin !== currentPin) {
+          previousPin.classList.remove('map__pin--active');
+        }
+        previousPin = currentPin;
+
+      });
+
       fragment.appendChild(pinElement);
     });
 
     mapPins.appendChild(fragment);
+
+    mapFiltersContainer.addEventListener('change', function () {
+      map.querySelector('.map__card').classList.add('hidden');
+    });
   }
+
 
   function activatePage() {
     if (!map.classList.contains('map--faded')) {
@@ -259,7 +312,7 @@
       mapPinMain.style.top = top + 'px';
       mapPinMain.style.left = left + 'px';
 
-      addressElement.value = (left + Math.round(mainPinWidth / 2)) + ', ' + (top + (mainPinHeight / 2));
+      addressElement.value = Math.round(left + (mainPinWidth / 2)) + ', ' + (top + (mainPinHeight / 2));
     }
 
     function handleMouseUp() {
