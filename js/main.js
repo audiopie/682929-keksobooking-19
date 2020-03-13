@@ -28,13 +28,26 @@
   var featuresElementsFilter = mapFilters.elements.features;
   var errorMessage = document.querySelector('#error').content.querySelector('.error');
   var successMessage = document.querySelector('#success').content.querySelector('.success');
+  var resetButton = adForm.querySelector('.ad-form__reset');
+  var fileChooserAvatar = document.querySelector('.ad-form__field input[type=file]');
+  var fileChooserPhoto = document.querySelector('.ad-form__upload input[type=file]');
+  var adAvatarPreview = adForm.querySelector('.ad-form-header__preview');
+  var avatar = adAvatarPreview.querySelector('img');
+  var roomImage = adForm.querySelector('.ad-form__photo');
+
 
   var PIN_WIDTH = 50;
   var PIN_HEIGHT = 70;
 
+  var FILE_TYPES = ['gif', 'jpg', 'jpeg', 'png'];
+
   var cardElement = null;
   var posts = null;
+
   var previousPin = null;
+
+  var maxPostCount = 5;
+
 
   var minPriceByType = {
     bungalo: 0,
@@ -142,6 +155,7 @@
     xhr.send();
   }
 
+
   function renderPins() {
     if (!posts) {
       return;
@@ -230,7 +244,9 @@
     mapPins.appendChild(fragment);
 
     mapFiltersContainer.addEventListener('change', function () {
-      map.querySelector('.map__card').classList.add('hidden');
+      if (map.querySelector('.map__card') !== null) {
+        map.querySelector('.map__card').classList.add('hidden');
+      }
     });
   }
 
@@ -252,7 +268,7 @@
     });
 
     getPosts(function (result) {
-      posts = result;
+      posts = result.length > maxPostCount ? result.slice(0, maxPostCount) : result;
 
       renderPins();
     });
@@ -335,6 +351,7 @@
     });
 
     main.appendChild(successElement);
+    resetForm();
   }
 
   function renderError() {
@@ -351,7 +368,51 @@
     });
 
     main.appendChild(errorElement);
+    resetForm();
   }
+
+  fileChooserAvatar.addEventListener('change', function () {
+    var file = fileChooserAvatar.files[0];
+    var fileName = file.name.toLowerCase();
+
+    var matches = FILE_TYPES.some(function (it) {
+      return fileName.endsWith(it);
+    });
+
+    if (matches) {
+      var reader = new FileReader();
+
+      reader.addEventListener('load', function () {
+        avatar.src = reader.result;
+      });
+
+      reader.readAsDataURL(file);
+    }
+  });
+
+  fileChooserPhoto.addEventListener('change', function () {
+    var file = fileChooserPhoto.files[0];
+    var fileName = file.name.toLowerCase();
+
+    var matches = FILE_TYPES.some(function (it) {
+      return fileName.endsWith(it);
+    });
+
+    if (matches) {
+      var reader = new FileReader();
+
+      reader.addEventListener('load', function () {
+        var img = document.createElement('img');
+        img.setAttribute('src', reader.result);
+        img.setAttribute('alt', 'Фотография жилья');
+        img.setAttribute('width', '45');
+        img.setAttribute('height', '40');
+        roomImage.appendChild(img);
+      });
+
+      reader.readAsDataURL(file);
+    }
+  });
 
   mapPinMain.addEventListener('keydown', function (event) {
     if (event.key === 'Enter' || event.code === 'NumpadEnter') {
@@ -378,6 +439,43 @@
 
   capacityNumber.addEventListener('change', function () {
     validateRoomNumber();
+  });
+
+  function resetForm() {
+    adForm.reset();
+
+    map.classList.add('map--faded');
+    adForm.classList.add('ad-form--disabled');
+
+    mapPinMain.style.top = 375 + 'px';
+    mapPinMain.style.left = 570 + 'px';
+
+    adFieldsetList.forEach(function (fieldset) {
+      fieldset.disabled = true;
+    });
+
+    filtersFieldsetList.forEach(function (fieldset) {
+      fieldset.disabled = true;
+    });
+
+    mapPins.querySelectorAll('.map__pin:not(.map__pin--main)')
+    .forEach(function (pin) {
+      pin.remove();
+    });
+
+    avatar.src = 'img/muffin-grey.svg';
+    roomImage.querySelectorAll('img').forEach(function (item) {
+      item.remove();
+    });
+
+    addressElement.value = '600, 350';
+    addressElement.disabled = true;
+
+  }
+
+  resetButton.addEventListener('click', function (event) {
+    event.preventDefault();
+    resetForm();
   });
 
   adForm.addEventListener('submit', function (event) {
