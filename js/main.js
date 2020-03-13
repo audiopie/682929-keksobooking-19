@@ -468,6 +468,8 @@
       item.remove();
     });
 
+    map.querySelector('.map__card').classList.add('hidden');
+
     addressElement.value = '600, 350';
     addressElement.disabled = true;
 
