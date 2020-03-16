@@ -223,6 +223,10 @@
     var guestsFilter = guestsCountFilter.value;
 
     posts.forEach(function (post) {
+      if (fragment.children.length > 4) {
+        return;
+      }
+
       if (!('offer' in post)) {
         return;
       }
