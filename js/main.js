@@ -25,8 +25,6 @@
 
   var FILE_TYPES = ['gif', 'jpg', 'jpeg', 'png'];
 
-  var MAX_POSTS_COUNT = 5;
-
   var map = document.querySelector('.map');
   var main = document.querySelector('main');
   var notice = document.querySelector('.notice');
@@ -51,7 +49,7 @@
   var priceElementFilter = mapFilters.elements['housing-price'];
   var roomCountFilter = mapFilters.elements['housing-rooms'];
   var guestsCountFilter = mapFilters.elements['housing-guests'];
-  var featuresElementsFilter = mapFilters.elements.features;
+  var featuresElementsFilter = mapFilters.elements['features'];
   var errorMessage = document.querySelector('#error').content.querySelector('.error');
   var successMessage = document.querySelector('#success').content.querySelector('.success');
   var resetButton = adForm.querySelector('.ad-form__reset');
@@ -67,7 +65,6 @@
   var previousPin = null;
 
   var validateFlag = false;
-
 
   var ImageAttribute = {
     alt: 'Фотография жилья',
@@ -124,8 +121,17 @@
     }
   };
 
+  var debouncesRenderPins = window.debounce(renderPins);
+
   function getCardClickHandler(post) {
-    return function () {
+    return function (pinEvent) {
+      var pinElement = pinEvent.currentTarget;
+      if (previousPin) {
+        previousPin.classList.remove('map__pin--active');
+      }
+      pinElement.classList.add('map__pin--active');
+      previousPin = pinElement;
+
       var notCard = !cardElement;
       if (notCard) {
         cardElement = card.cloneNode(true);
@@ -196,11 +202,12 @@
     xhr.send();
   }
 
-
   function renderPins() {
     if (!posts) {
       return;
     }
+
+    hideMapCard();
 
     mapPins.querySelectorAll('.map__pin:not(.map__pin--main)')
       .forEach(function (pin) {
@@ -214,7 +221,6 @@
     var priceFilter = priceElementFilter.value;
     var roomFilter = roomCountFilter.value;
     var guestsFilter = guestsCountFilter.value;
-    var countPosts = 0;
 
     posts.forEach(function (post) {
       if (!('offer' in post)) {
@@ -248,8 +254,7 @@
           return;
         }
 
-        if (post.offer.features.includes(feature.value) && countPosts < MAX_POSTS_COUNT) {
-          countPosts += 1;
+        if (post.offer.features.includes(feature.value)) {
           return;
         }
 
@@ -270,23 +275,10 @@
       pinElement.querySelector('img').alt = post.offer.title;
       pinElement.addEventListener('click', getCardClickHandler(post));
 
-      pinElement.addEventListener('click', function (event) {
-        pinElement.classList.add('map__pin--active');
-        var currentPin = event.currentTarget;
-        if (previousPin !== null && previousPin !== currentPin) {
-          previousPin.classList.remove('map__pin--active');
-        }
-        previousPin = currentPin;
-
-      });
-
       fragment.appendChild(pinElement);
     });
 
     mapPins.appendChild(fragment);
-
-    mapFiltersContainer.addEventListener('change', hideMapCard);
-
   }
 
 
@@ -466,7 +458,7 @@
   });
 
   mapFilters.addEventListener('change', function () {
-    renderPins();
+    debouncesRenderPins();
   });
 
   typeElement.addEventListener('change', function () {
