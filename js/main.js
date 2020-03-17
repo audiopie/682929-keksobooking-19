@@ -23,6 +23,8 @@
 
   var ANY = 'any';
 
+  var MAX_POST_COUNT = 4;
+
   var FILE_TYPES = ['gif', 'jpg', 'jpeg', 'png'];
 
   var map = document.querySelector('.map');
@@ -138,13 +140,13 @@
         document.addEventListener('keydown', function (event) {
           if (event.key === ESCAPE) {
             cardElement.classList.add('hidden');
-            mapPins.querySelector('.map__pin--active').classList.remove('map__pin--active');
+            previousPin.classList.remove('map__pin--active');
           }
         });
 
         cardElement.querySelector('.popup__close').addEventListener('click', function () {
           cardElement.classList.add('hidden');
-          mapPins.querySelector('.map__pin--active').classList.remove('map__pin--active');
+          previousPin.classList.remove('map__pin--active');
         }
         );
       }
@@ -202,6 +204,7 @@
     xhr.send();
   }
 
+
   function renderPins() {
     if (!posts) {
       return;
@@ -216,72 +219,70 @@
 
     var fragment = document.createDocumentFragment();
 
-
     var typeFilter = typeElementFilter.value;
     var priceFilter = priceElementFilter.value;
     var roomFilter = roomCountFilter.value;
     var guestsFilter = guestsCountFilter.value;
 
-    posts.forEach(function (post) {
-      if (fragment.children.length > 4) {
-        return;
-      }
+    for (var i = 0; i < posts.length; i++) {
+      var post = posts[i];
+      if (fragment.children.length > MAX_POST_COUNT) {
+        break;
+      } else {
 
-      if (!('offer' in post)) {
-        return;
-      }
-
-      if (typeFilter !== ANY && typeFilter !== post.offer.type) {
-        return;
-      }
-
-      // 2. Filter by price
-      if (priceFilter !== ANY && (!(post.offer.price <= PriceValueFilters[priceFilter]['max'] && post.offer.price > PriceValueFilters[priceFilter]['min']))) {
-        return;
-      }
-
-      // 3. Filter by room number
-      if (roomFilter !== ANY && +roomFilter !== post.offer.rooms) {
-        return;
-      }
-
-      // 4. Filter by guests count
-      if (guestsFilter !== ANY && +guestsFilter !== post.offer.guests) {
-        return;
-      }
-
-      // 5. Filter by features
-      var notFeatures = false;
-
-      featuresElementsFilter.forEach(function (feature) {
-        if (!feature.checked) {
-          return;
+        if (!('offer' in post)) {
+          continue;
         }
 
-        if (post.offer.features.includes(feature.value)) {
-          return;
+        if (typeFilter !== ANY && typeFilter !== post.offer.type) {
+          continue;
         }
 
-        notFeatures = true;
-      });
+        if (priceFilter !== ANY && (!(post.offer.price <= PriceValueFilters[priceFilter]['max'] && post.offer.price > PriceValueFilters[priceFilter]['min']))) {
+          continue;
+        }
 
-      if (notFeatures) {
-        return;
+        if (roomFilter !== ANY && +roomFilter !== post.offer.rooms) {
+          continue;
+        }
+
+        if (guestsFilter !== ANY && +guestsFilter !== post.offer.guests) {
+          continue;
+        }
+
+        var notFeatures = false;
+
+        for (var j = 0; j < featuresElementsFilter.length; j++) {
+          var feature = featuresElementsFilter[j];
+          if (!feature.checked) {
+            continue;
+          }
+
+
+          if (post.offer.features.includes(feature.value)) {
+            continue;
+          }
+
+          notFeatures = true;
+        }
+
+        if (notFeatures) {
+          continue;
+        }
+
+        var pinElement = pinTemplate.cloneNode(true);
+        var left = (post.location.x - (PIN_WIDTH / 2)) + 'px';
+        var top = (post.location.y - PIN_HEIGHT) + 'px';
+
+        pinElement.style.left = left;
+        pinElement.style.top = top;
+        pinElement.querySelector('img').src = post.author.avatar;
+        pinElement.querySelector('img').alt = post.offer.title;
+        pinElement.addEventListener('click', getCardClickHandler(post));
+
+        fragment.appendChild(pinElement);
       }
-
-      var pinElement = pinTemplate.cloneNode(true);
-      var left = (post.location.x - (PIN_WIDTH / 2)) + 'px';
-      var top = (post.location.y - PIN_HEIGHT) + 'px';
-
-      pinElement.style.left = left;
-      pinElement.style.top = top;
-      pinElement.querySelector('img').src = post.author.avatar;
-      pinElement.querySelector('img').alt = post.offer.title;
-      pinElement.addEventListener('click', getCardClickHandler(post));
-
-      fragment.appendChild(pinElement);
-    });
-
+    }
     mapPins.appendChild(fragment);
   }
 
@@ -348,7 +349,7 @@
     document.addEventListener('mouseup', handleMouseUp);
 
     var documentWidth = document.documentElement.offsetWidth;
-    var offsetLeft = (documentWidth - mapPins.offsetWidth) / 2 + (65 / 2);
+    var offsetLeft = (documentWidth - mapPins.offsetWidth) / 2 + (MAIN_PIN_WIDTH / 2);
 
 
     function handleMouseMove(moveEvent) {
@@ -484,9 +485,11 @@
 
   function resetForm() {
     adForm.reset();
+    mapFilters.reset();
 
     map.classList.add('map--faded');
     adForm.classList.add('ad-form--disabled');
+
 
     mapPinMain.style.top = DEFAULT_MAIN_PIN_STYLE_TOP;
     mapPinMain.style.left = DEFAULT_MAIN_PIN_STYLE_LEFT;
