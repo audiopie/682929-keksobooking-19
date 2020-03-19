@@ -38,20 +38,20 @@
   var timeElementsForm = document.querySelector('.ad-form__element--time');
   var filtersFieldsetList = mapFiltersContainer.querySelectorAll('select');
   var adFieldsetList = notice.querySelectorAll('fieldset');
-  var typeElement = adForm.elements['type'];
-  var priceElement = adForm.elements['price'];
-  var addressElement = adForm.elements['address'];
-  var timeInForm = adForm.elements['timein'];
-  var timeOutForm = adForm.elements['timeout'];
-  var roomNumber = adForm.elements['rooms'];
-  var capacityNumber = adForm.elements['capacity'];
-  var typeElementFilter = mapFilters.elements['housing-type'];
-  var priceElementFilter = mapFilters.elements['housing-price'];
-  var roomCountFilter = mapFilters.elements['housing-rooms'];
-  var guestsCountFilter = mapFilters.elements['housing-guests'];
-  var featuresElementsFilter = mapFilters.elements['features'];
-  var fileChooserAvatar = adForm.elements['avatar'];
-  var fileChooserPhoto = adForm.elements['images'];
+  var typeElement = adForm.querySelector('#type');
+  var priceElement = adForm.querySelector('#price');
+  var addressElement = adForm.querySelector('#address');
+  var timeInForm = adForm.querySelector('#timein');
+  var timeOutForm = adForm.querySelector('#timeout');
+  var roomNumber = adForm.querySelector('#room_number');
+  var capacityNumber = adForm.querySelector('#capacity');
+  var typeElementFilter = mapFilters.querySelector('#housing-type');
+  var priceElementFilter = mapFilters.querySelector('#housing-price');
+  var roomCountFilter = mapFilters.querySelector('#housing-rooms');
+  var guestsCountFilter = mapFilters.querySelector('#housing-guests');
+  var featuresElementsFilter = mapFilters.querySelectorAll('#housing-features input');
+  var fileChooserAvatar = adForm.querySelector('#avatar');
+  var fileChooserPhoto = adForm.querySelector('#images');
   var avatar = adForm.querySelector('.ad-form-header__preview img');
   var roomImage = adForm.querySelector('.ad-form__photo');
   var resetButton = adForm.querySelector('.ad-form__reset');
@@ -188,6 +188,7 @@
     };
   }
 
+
   function getPosts(callback) {
     var xhr = new XMLHttpRequest();
     xhr.responseType = 'json';
@@ -240,11 +241,13 @@
     mapPins.appendChild(fragment);
   }
 
+
   function hideMapCard() {
     if (map.querySelector('.map__card') !== null) {
       map.querySelector('.map__card').classList.add('hidden');
     }
   }
+
 
   function removePins() {
     mapPins.querySelectorAll('.map__pin:not(.map__pin--main)')
@@ -252,6 +255,7 @@
         pin.remove();
       });
   }
+
 
   function validatePost(post) {
     var typeFilter = typeElementFilter.value;
@@ -302,6 +306,7 @@
     return true;
   }
 
+
   function activatePage() {
     if (!map.classList.contains('map--faded')) {
       return;
@@ -327,6 +332,7 @@
     });
   }
 
+
   function validatePrice() {
     var price = +priceElement.value;
     var minPrice = MinPriceByType[typeElement.value];
@@ -338,6 +344,7 @@
     }
   }
 
+
   function validateRoomNumber() {
     var aviableValues = RoomsValuesByGuests[capacityNumber.value];
 
@@ -347,6 +354,7 @@
       roomNumber.setCustomValidity('Количество комнат должно быть: ' + aviableValues.join(' или '));
     }
   }
+
 
   function handleMouseDown(event) {
     if (event.button !== 0) {
@@ -382,11 +390,13 @@
       addressElement.value = Math.round(left + (MAIN_PIN_WIDTH / 2)) + ', ' + (top + (MAIN_PIN_HEIGHT / 2));
     }
 
+
     function handleMouseUp() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     }
   }
+
 
   function renderSuccess() {
     var successElement = successMessage.cloneNode(true);
@@ -405,6 +415,7 @@
     resetForm();
   }
 
+
   function renderError() {
     var errorElement = errorMessage.cloneNode(true);
 
@@ -421,6 +432,7 @@
     main.appendChild(errorElement);
     resetForm();
   }
+
 
   fileChooserAvatar.addEventListener('change', function () {
     var file = fileChooserAvatar.files[0];
@@ -440,6 +452,7 @@
       reader.readAsDataURL(file);
     }
   });
+
 
   fileChooserPhoto.addEventListener('change', function () {
     var file = fileChooserPhoto.files[0];
@@ -464,6 +477,7 @@
       reader.readAsDataURL(file);
     }
   });
+
 
   mapPinMain.addEventListener('keydown', function (event) {
     if (event.key === ENTER || event.code === NUM_PAD_ENTER) {
@@ -491,6 +505,7 @@
   capacityNumber.addEventListener('change', function () {
     validateRoomNumber();
   });
+
 
   function resetForm() {
     adForm.reset();
@@ -528,10 +543,12 @@
     hideMapCard();
   }
 
+
   resetButton.addEventListener('click', function (event) {
     event.preventDefault();
     resetForm();
   });
+
 
   adForm.addEventListener('submit', function (event) {
     event.preventDefault();
@@ -554,6 +571,7 @@
 
     xhr.send(formData);
   });
+
 
   timeElementsForm.addEventListener('change', function (event) {
     timeInForm.value = event.target.value;
